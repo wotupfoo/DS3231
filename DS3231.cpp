@@ -159,7 +159,7 @@ bool isleapYear(const uint8_t y) {
   return (y % 100 || y % 400 == 0);
 }
 
-DateTime RTClib::now() {
+DateTime DS3231::now() {
   Wire.beginTransmission(CLOCK_ADDRESS);
   Wire.write(0);	// This is the first register address (Seconds)
   			// We'll read from here on for 7 bytes: secs reg, minutes reg, hours, days, months and years.

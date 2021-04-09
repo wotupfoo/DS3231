@@ -36,6 +36,7 @@ public:
     uint8_t hour() const        { return hh; }
     uint8_t minute() const      { return mm; }
     uint8_t second() const      { return ss; }
+    void    setsecond(uint8_t s) { ss = s; }
     uint8_t dayOfTheWeek() const;
 
     // 32-bit times as seconds since 1/1/2000
@@ -66,7 +67,8 @@ class DS3231 {
 		DS3231();
 
 		// Time-retrieval functions
-    
+		DateTime now();
+
 		// the get*() functions retrieve current values of the registers.
 		byte getSecond(); 
 		byte getMinute(); 
