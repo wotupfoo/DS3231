@@ -160,21 +160,34 @@ bool isleapYear(const uint8_t y) {
 }
 
 DateTime DS3231::now() {
-  Wire.beginTransmission(CLOCK_ADDRESS);
-  Wire.write(0);	// This is the first register address (Seconds)
-  			// We'll read from here on for 7 bytes: secs reg, minutes reg, hours, days, months and years.
-  Wire.endTransmission();
-  
-  Wire.requestFrom(CLOCK_ADDRESS, 7);
-  uint8_t ss = bcd2bin(Wire.read() & 0x7F);
-  uint8_t mm = bcd2bin(Wire.read());
-  uint8_t hh = bcd2bin(Wire.read());
-  Wire.read();
-  uint8_t d = bcd2bin(Wire.read());
-  uint8_t m = bcd2bin(Wire.read());
-  uint16_t y = bcd2bin(Wire.read()) + 2000;
-  
-  return DateTime (y, m, d, hh, mm, ss);
+	Wire.beginTransmission(CLOCK_ADDRESS);
+	Wire.write(0);	// This is the first register address (Seconds)
+	// We'll read from here on for 7 bytes: secs, mins, hours, (DoW), days, months and years.
+	Wire.endTransmission();
+
+	Wire.requestFrom(CLOCK_ADDRESS, 7);
+	uint8_t ss = bcd2bin(Wire.read() & 0x7F);		// Seconds
+	uint8_t mm = bcd2bin(Wire.read());				// Minutes
+	uint8_t temp_buffer = Wire.read();				// Hour + flags
+	uint8_t hh;
+	uint8_t h12 = temp_buffer & 0b01000000;
+	if (h12) {										// 12hr mode
+		hh = bcd2bin((temp_buffer & 0b00011111);	// hh = 0..12 (0..19)
+	} else {										// 24hr mode
+		hh = bcd2bin((temp_buffer & 0b00111111);	// hh = 0..23 (0..39)
+	}
+	Wire.read();									// Day of Week
+	uint8_t d = bcd2bin(Wire.read());				// Date
+	temp_buffer = Wire.read();						// Month
+	bool century = !!(temp_buffer & 0b10000000);	// Century flag
+	uint8_t m = bcd2bin(Wire.read() & 0b00011111);	// Month
+	uint16_t y;										// Year
+	if(!century)									// Century bit
+		y=2000;
+	else
+		y=2100;
+	y += bcd2bin(Wire.read());						// Year 0..99
+	return DateTime (y, m, d, hh, mm, ss);
 }
 
 ///// ERIC'S ORIGINAL CODE FOLLOWS /////
@@ -194,7 +207,7 @@ byte DS3231::getMinute() {
 	Wire.endTransmission();
 
 	Wire.requestFrom(CLOCK_ADDRESS, 1);
-	return bcdToDec(Wire.read());
+	return bcdToDec(Wire.read() & 0b00011111);
 }
 
 byte DS3231::getHour(bool& h12, bool& PM_time) {
