@@ -172,9 +172,9 @@ DateTime DS3231::now() {
 	uint8_t hh;
 	uint8_t h12 = temp_buffer & 0b01000000;
 	if (h12) {										// 12hr mode
-		hh = bcd2bin((temp_buffer & 0b00011111);	// hh = 0..12 (0..19)
+		hh = bcd2bin(temp_buffer & 0b00011111);		// hh = 0..12 (0..19)
 	} else {										// 24hr mode
-		hh = bcd2bin((temp_buffer & 0b00111111);	// hh = 0..23 (0..39)
+		hh = bcd2bin(temp_buffer & 0b00111111);		// hh = 0..23 (0..39)
 	}
 	Wire.read();									// Day of Week
 	uint8_t d = bcd2bin(Wire.read());				// Date
@@ -182,10 +182,11 @@ DateTime DS3231::now() {
 	bool century = !!(temp_buffer & 0b10000000);	// Century flag
 	uint8_t m = bcd2bin(Wire.read() & 0b00011111);	// Month
 	uint16_t y;										// Year
-	if(!century)									// Century bit
+	if(!century) {									// Century bit
 		y=2000;
-	else
+	} else {
 		y=2100;
+	}
 	y += bcd2bin(Wire.read());						// Year 0..99
 	return DateTime (y, m, d, hh, mm, ss);
 }
