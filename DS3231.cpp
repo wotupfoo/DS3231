@@ -115,8 +115,8 @@ DateTime::DateTime (uint32_t t) {
 
 DateTime::DateTime (uint16_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t min, uint8_t sec) {
     if (year >= 2000)
-        year -= 2000;
-    yOff = year;
+        yOff = year - 2000;
+	y = year;
     m = month;
     d = day;
     hh = hour;
@@ -128,8 +128,7 @@ DateTime::DateTime (uint16_t year, uint8_t month, uint8_t day, uint8_t hour, uin
 DateTime::DateTime(const char* date, const char* time) {
    static const char month_names[] = "JanFebMarAprMayJunJulAugSepOctNovDec";
    static char buff[4] = {'0','0','0','0'};
-   int y;
-   sscanf(date, "%s %c %d", buff, &d, &y);
+   sscanf(date, "%s %c %d", buff, &d, (int*)&y);
    yOff = y >= 2000 ? y - 2000 : y;
    m = (strstr(month_names, buff) - month_names) / 3 + 1;
    sscanf(time, "%c:%c:%c", &hh, &mm, &ss);
@@ -152,7 +151,7 @@ static uint8_t bcd2bin (uint8_t val) { return val - 6 * (val >> 4); }
 // eventually
 //static uint8_t bin2bcd (uint8_t val) { return val + 6 * (val / 10); }
 
-bool isleapYear(const uint8_t y) {
+bool isleapYear(const uint16_t y) {
   if(y&3)//check if divisible by 4
     return false;
   //only check other, when first failed
@@ -166,7 +165,7 @@ DateTime DS3231::now() {
 	Wire.endTransmission();
 
 	Wire.requestFrom(CLOCK_ADDRESS, 7);
-	uint8_t ss = bcd2bin(Wire.read() & 0x7F);		// Seconds
+	uint8_t ss = bcd2bin(Wire.read());				// Seconds
 	uint8_t mm = bcd2bin(Wire.read());				// Minutes
 	uint8_t temp_buffer = Wire.read();				// Hour + flags
 	uint8_t hh;
@@ -180,13 +179,8 @@ DateTime DS3231::now() {
 	uint8_t d = bcd2bin(Wire.read());				// Date
 	temp_buffer = Wire.read();						// Month
 	bool century = !!(temp_buffer & 0b10000000);	// Century flag
-	uint8_t m = bcd2bin(Wire.read() & 0b00011111);	// Month
-	uint16_t y;										// Year
-	if(!century) {									// Century bit
-		y=2000;
-	} else {
-		y=2100;
-	}
+	uint8_t m = bcd2bin(temp_buffer & 0b00011111);	// Month
+	uint16_t y = (century)? 100:0;					// Year 0 | 100
 	y += bcd2bin(Wire.read());						// Year 0..99
 	return DateTime (y, m, d, hh, mm, ss);
 }
@@ -208,7 +202,7 @@ byte DS3231::getMinute() {
 	Wire.endTransmission();
 
 	Wire.requestFrom(CLOCK_ADDRESS, 1);
-	return bcdToDec(Wire.read() & 0b00011111);
+	return bcdToDec(Wire.read());
 }
 
 byte DS3231::getHour(bool& h12, bool& PM_time) {
@@ -249,24 +243,24 @@ byte DS3231::getDate() {
 }
 
 byte DS3231::getMonth(bool& Century) {
-	byte temp_buffer;
 	Wire.beginTransmission(CLOCK_ADDRESS);
 	Wire.write(0x05);
 	Wire.endTransmission();
 
 	Wire.requestFrom(CLOCK_ADDRESS, 1);
-	temp_buffer = Wire.read();
-	Century = temp_buffer & 0b10000000;
-	return (bcdToDec(temp_buffer & 0b01111111)) ;
+	return bcdToDec(Wire.read() & 0b00011111);
 }
 
 byte DS3231::getYear() {
 	Wire.beginTransmission(CLOCK_ADDRESS);
-	Wire.write(0x06);
+	Wire.write(0x05);
 	Wire.endTransmission();
 
-	Wire.requestFrom(CLOCK_ADDRESS, 1);
-	return bcdToDec(Wire.read());
+	Wire.requestFrom(CLOCK_ADDRESS, 2);
+	uint8_t temp_buffer = Wire.read();				// Month
+	bool century = !!(temp_buffer & 0b10000000);	// Century flag
+	uint16_t y = (century)? 100:0;					// Year 0 | 100
+	return y += bcd2bin(Wire.read());				// Year 0..99
 }
 
 // setEpoch function gives the epoch as parameter and feeds the RTC

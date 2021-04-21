@@ -30,7 +30,7 @@ public:
     DateTime (uint16_t year, uint8_t month, uint8_t day,
                 uint8_t hour =0, uint8_t min =0, uint8_t sec =0);
     DateTime (const char* date, const char* time);
-    uint16_t year() const       { return 2000 + yOff; }
+    uint16_t year() const       { return y; }
     uint8_t month() const       { return m; }
     uint8_t day() const         { return d; }
     uint8_t hour() const        { return hh; }
@@ -48,16 +48,11 @@ public:
     uint32_t unixtime(void) const;
 protected:
     uint8_t yOff, m, d, hh, mm, ss;
+	uint16_t y;
 };
 
 //checks if a year is a leap year
-bool isleapYear(const uint8_t);
-
-class RTClib {
-  public:
-		// Get date and time snapshot
-    static DateTime now();
-};
+bool isleapYear(const uint16_t);
 
 // Eric's original code is everything below this line
 class DS3231 {
