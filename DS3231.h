@@ -163,11 +163,17 @@ class DS3231 {
 			// 3 = 8.192 kHz (Default if frequency byte is out of range);
 		void enable32kHz(bool TF); 
 			// Turns the 32kHz output pin on (true); or off (false).
-		bool oscillatorCheck();;
+
+		bool oscillatorCheck();
 			// Checks the status of the OSF (Oscillator Stop Flag);.
 			// If this returns false, then the clock is probably not
 			// giving you the correct time.
 			// The OSF is cleared by function setSecond();.
+
+		bool isBusy();
+			// Checks the status of the BSY (Busy Flag);.
+			// If this returns true, then the clock is bust
+			// and should not be written to
 
 	private:
 

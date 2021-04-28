@@ -723,6 +723,16 @@ bool DS3231::oscillatorCheck() {
 	return result;
 }
 
+bool DS3231::isBusy() {
+	// Returns true if the chip is busy
+	byte temp_buffer = readControlByte(1);
+	if (temp_buffer & 0b00000100) {
+		// Busy Flag (BSY) is set, so return true.
+		return true;
+	}
+	return false;
+}
+
 /***************************************** 
 	Private Functions
  *****************************************/
